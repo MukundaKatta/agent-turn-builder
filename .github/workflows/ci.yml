@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -24,3 +24,20 @@ jobs:
         run: ruff format --check src tests
       - name: Test
         run: pytest tests/ -v
+
+  unittest-stdlib:
+    # Verifies the standard-library test suite runs with zero third-party
+    # dependencies, so the package can be validated anywhere Python is present.
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run unittest (no install, no deps)
+        run: python -m unittest discover -s tests -p "test_unittest_suite.py" -v
+      - name: Byte-compile all sources
+        run: python -m py_compile src/agent_turn_builder/core.py src/agent_turn_builder/__init__.py
