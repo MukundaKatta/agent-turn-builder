@@ -1,8 +1,20 @@
-"""Tests for agent_turn_builder."""
+"""Tests for agent_turn_builder (pytest).
+
+This module is written for ``pytest``.  A dependency-free mirror lives in
+``tests/test_unittest_suite.py`` and runs under the standard-library
+``unittest`` runner.  When ``pytest`` is not installed (for example under a
+plain ``python -m unittest discover``), this module skips cleanly instead of
+raising an import error.
+"""
 
 from __future__ import annotations
 
-import pytest
+try:
+    import pytest
+except ImportError:  # pragma: no cover - exercised only without pytest
+    import unittest
+
+    raise unittest.SkipTest("pytest is not installed; see test_unittest_suite.py")
 
 from agent_turn_builder import AgentTurnBuilder, TurnError
 
@@ -112,6 +124,16 @@ def test_build_deepcopies_list_content():
     msgs[0]["content"][0]["text"] = "changed"
     # Original should be unaffected
     assert b.build()[0]["content"][0]["text"] == "hi"
+
+
+def test_append_isolates_source_list():
+    # Mutating the caller's list after appending must not corrupt builder state.
+    content = [{"type": "text", "text": "hi"}]
+    b = AgentTurnBuilder().user(content)
+    content.append({"type": "text", "text": "later"})
+    content[0]["text"] = "MUTATED"
+    built = b.build()[0]["content"]
+    assert built == [{"type": "text", "text": "hi"}]
 
 
 # ---------------------------------------------------------------------------

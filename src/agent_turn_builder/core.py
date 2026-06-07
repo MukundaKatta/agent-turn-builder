@@ -44,6 +44,11 @@ class AgentTurnBuilder:
     The builder tracks message order and can optionally enforce
     role-alternation rules (user/assistant must alternate after system).
 
+    Mutable content (a content-block ``list``) is deep-copied when added, so
+    mutating the object you passed in afterwards never corrupts builder state;
+    likewise every :meth:`build`, :meth:`to_openai` and :meth:`to_anthropic`
+    call returns a fresh deep copy, leaving the builder reusable.
+
     Args:
         strict: When ``True``, :meth:`build` raises :class:`TurnError` if
                 role-alternation rules are violated.  Default ``False``.
@@ -278,6 +283,14 @@ class AgentTurnBuilder:
         role: str,
         content: str | list[Any],
     ) -> AgentTurnBuilder:
+        # Strings are immutable, but a content-block ``list`` (and any dicts it
+        # contains) is mutable.  Storing the caller's reference directly would
+        # let later mutation of *their* object silently corrupt builder state,
+        # so defensively deep-copy mutable content on the way in.  This mirrors
+        # the deep-copy already performed by ``tool_use`` and ``from_list`` and
+        # keeps the cheap common case (plain strings) allocation-free.
+        if not isinstance(content, str):
+            content = copy.deepcopy(content)
         self._messages.append({"role": role, "content": content})
         return self
 
