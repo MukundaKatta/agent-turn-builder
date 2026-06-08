@@ -235,7 +235,7 @@ class AgentTurnBuilder:
         b = cls()
         for m in messages:
             role = m.get("role", "")
-            content = m.get("content", "")
+            content = copy.deepcopy(m.get("content", ""))
             b._append(role, content)
         return b
 

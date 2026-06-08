@@ -285,6 +285,14 @@ def test_from_list_deepcopy():
     assert b.build()[0]["content"] == "hi"
 
 
+def test_from_list_deepcopies_mutable_content():
+    # In-place mutation of the source content must not leak into the builder.
+    source = [{"role": "user", "content": [{"type": "text", "text": "hi"}]}]
+    b = AgentTurnBuilder.from_list(source)
+    source[0]["content"][0]["text"] = "changed"
+    assert b.build()[0]["content"][0]["text"] == "hi"
+
+
 # ---------------------------------------------------------------------------
 # to_anthropic
 # ---------------------------------------------------------------------------
